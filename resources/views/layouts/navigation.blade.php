@@ -18,6 +18,9 @@
     <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
         {{ __('Kelola User') }}
     </x-nav-link>
+    <x-nav-link :href="route('mutasi.index')" :active="request()->routeIs('mutasi.index')">
+    {{ __('Mutasi Rekening') }}
+</x-nav-link>
 </div>
             </div>
 

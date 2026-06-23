@@ -23,7 +23,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/users/{user}',  [UserController::class, 'destroy'])->name('users.destroy');
     Route::get('/profile',    [ProfileController::class, 'edit'])   ->name('profile.edit');
     Route::patch('/profile',  [ProfileController::class, 'update']) ->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+       Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/mutasi', [App\Http\Controllers\MutasiController::class, 'index'])->name('mutasi.index');
 });
 
 // ← DEBUG API (Sudah dibersihkan dari sisa kode yang nyangkut)
