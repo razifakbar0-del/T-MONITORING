@@ -12,23 +12,18 @@ class TransactionController extends Controller
 {
     public function syncApi()
     {
-        // Menentukan rentang tanggal sinkronisasi
         $startDate = '2026-06-01'; 
         $endDate = Carbon::today()->format('Y-m-d');
         $endpointUrl = "https://mpn-gateway.samantara.com/mpnbjt/api/mutasi?start={$startDate}&end={$endDate}";
 
         try {
-            // Ambil data dari API dengan timeout 15 detik agar tidak membuat aplikasi freeze
             $response = Http::timeout(15)->get($endpointUrl);
 
             if ($response->successful()) {
                 $rootData = $response->json();
-                
-                // Response API Samantara membungkus data mutasi di dalam key 'data'
                 $apiData = $rootData['data'] ?? [];
                 $insertedCount = 0;
 
-                // Mapping nama bulan Indonesia ke angka untuk keperluan standar format SQLite/MySQL
                 $months = [
                     'Januari'   => '01', 'Februari'  => '02', 'Maret'     => '03', 
                     'April'     => '04', 'Mei'       => '05', 'Juni'      => '06', 
@@ -37,39 +32,31 @@ class TransactionController extends Controller
                 ];
 
                 foreach ($apiData as $item) {
-                    // Ambil nomor referensi unik sebagai id transaksi API
                     $apiTrxId = $item['no_reference'] ?? null;
                     
                     if ($apiTrxId) {
-                        // BUG FIX 1: Ubah 'debet_credit' (huruf c) menjadi 'debet_kredit' (huruf k) sesuai JSON asli API
                         $rawAmount = $item['debet_kredit'] ?? '0';
-                        
-                        // Membersihkan tanda titik (.) dan minus (-) lalu ubah ke angka mutlak (absolut)
                         $cleanAmount = abs((float) str_replace(['.', '-'], '', $rawAmount));
 
-                        // BUG FIX 2: Standardisasi penanganan konversi tanggal lokal "02 Juni 2026"
                         $rawDate = $item['tanggal'] ?? ''; 
-                        $finalDate = Carbon::now()->format('Y-m-d H:i:s'); // fallback jika parse gagal
+                        $finalDate = Carbon::now()->format('Y-m-d H:i:s');
                         
                         if (!empty($rawDate)) {
-                            $dateParts = explode(' ', trim($rawDate)); // pecah jadi array [02, Juni, 2026]
+                            $dateParts = explode(' ', trim($rawDate));
                             if (count($dateParts) === 3) {
                                 $day = str_pad($dateParts[0], 2, '0', STR_PAD_LEFT);
                                 $monthName = $dateParts[1];
                                 $year = $dateParts[2];
-                                
-                                // Jika bulan tidak terdaftar, default ke bulan berjalan
                                 $monthNumber = $months[$monthName] ?? Carbon::now()->format('m');
                                 $finalDate = "{$year}-{$monthNumber}-{$day} 12:00:00";
                             }
                         }
 
-                        // BUG FIX 3: Mencegah duplikasi data sebelum insert ke database local
                         $exists = Transaction::where('trx_id', $apiTrxId)->exists();
                         
                         if (!$exists) {
                             Transaction::create([
-                                'api_source_id' => 1, // Pastikan id 1 terdaftar di tabel api_sources
+                                'api_source_id' => 1,
                                 'trx_id'        => $apiTrxId,
                                 'trx_date'      => $finalDate,
                                 'amount'        => $cleanAmount,
@@ -87,15 +74,121 @@ class TransactionController extends Controller
             return redirect()->route('dashboard')->with('error', "Gagal Sinkronisasi! Gateway merespon status: " . $response->status());
 
         } catch (\Exception $e) {
-            // Mencatat error ke file log local (storage/logs/laravel.log) untuk memudahkan debugging mandiri
             Log::error('API Sync Failure: ' . $e->getMessage());
-            
             return redirect()->route('dashboard')->with('error', "Gagal terhubung ke server API: " . $e->getMessage());
         }
     }
 
+    public function uploadCsv(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:10240',
+        ]);
+
+        $file = $request->file('csv_file');
+        $handle = fopen($file->getPathname(), 'r');
+
+        // Skip baris header
+        fgetcsv($handle, 0, ';');
+
+        $inserted = 0;
+        $skipped  = 0;
+        $errors   = 0;
+
+        while (($row = fgetcsv($handle, 0, ';')) !== false) {
+            // Pastikan jumlah kolom cukup
+            if (count($row) < 17) {
+                $errors++;
+                continue;
+            }
+
+            $trxId = trim($row[0]);
+            if (empty($trxId)) { $errors++; continue; }
+
+            // Cek duplikat berdasarkan trx_id
+            if (Transaction::where('trx_id', $trxId)->exists()) {
+                $skipped++;
+                continue;
+            }
+
+            try {
+                // Parse tanggal format "19/06/2026 00:36:52"
+                $trxDate = Carbon::createFromFormat('d/m/Y H:i:s', trim($row[5]));
+
+                $rc     = trim($row[10]);
+                $status = ($rc === '00') ? 'sukses' : 'gagal';
+
+                Transaction::create([
+                    'trx_id'        => $trxId,
+                    'api_source_id' => null,
+                    'reseller_name' => trim($row[1]),
+                    'supplier'      => trim($row[4]),
+                    'trx_date'      => $trxDate,
+                    'msisdn'        => trim($row[6]),
+                    'amount'        => abs((float) trim($row[9])),
+                    'status'        => $status,
+                    'product_code'  => trim($row[14]),
+                    'customer_name' => trim($row[13]),
+                    'sn'            => trim($row[11]),
+                    'request_id'    => trim($row[12]),
+                    'debit'         => (int) trim($row[15]),
+                    'credit'        => (int) trim($row[16]),
+                    'balance'       => isset($row[17]) ? (int) trim($row[17]) : 0,
+                    'profit'        => isset($row[8])  ? (int) trim($row[8])  : 0,
+                ]);
+
+                $inserted++;
+            } catch (\Exception $e) {
+                Log::error("CSV import error row {$trxId}: " . $e->getMessage());
+                $errors++;
+            }
+        }
+
+        fclose($handle);
+
+        $message = "Import selesai: {$inserted} data berhasil diimport, {$skipped} data sudah ada (skip)";
+        if ($errors > 0) $message .= ", {$errors} baris error";
+
+        return back()->with('success', $message);
+    }
+
     public function exportCsv()
     {
-        // Logika export aman
+        $transactions = Transaction::orderBy('trx_date', 'desc')->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="transactions_' . date('Ymd_His') . '.csv"',
+        ];
+
+        $callback = function () use ($transactions) {
+            $handle = fopen('php://output', 'w');
+            // Header kolom
+            fputcsv($handle, [
+                'ID', 'TRX ID', 'Reseller', 'Supplier', 'Tanggal', 
+                'MSISDN', 'Produk', 'Amount', 'Profit', 
+                'Debit', 'Credit', 'Balance', 'Status'
+            ]);
+            foreach ($transactions as $t) {
+                fputcsv($handle, [
+                    $t->id,
+                    $t->trx_id,
+                    $t->reseller_name,
+                    $t->supplier,
+                    $t->trx_date,
+                    $t->msisdn,
+                    $t->customer_name,
+                    $t->amount,
+                    $t->profit,
+                    $t->debit,
+                    $t->credit,
+                    $t->balance,
+                    $t->status,
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

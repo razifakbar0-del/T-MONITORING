@@ -75,7 +75,7 @@
                         </div>
                     </div>
 
-                    {{-- Sinkronisasi + Export --}}
+                    {{-- Sinkronisasi + Upload + Export --}}
                     <div class="flex flex-wrap gap-2">
 
                         {{-- Modal trigger sinkronisasi --}}
@@ -85,6 +85,15 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18.2"/>
                             </svg>
                             SINKRONISASI API
+                        </button>
+
+                        {{-- Tombol Upload CSV --}}
+                        <button type="button" onclick="document.getElementById('modalUploadCsv').classList.remove('hidden')"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                            </svg>
+                            UPLOAD CSV
                         </button>
 
                         <a href="{{ route('transactions.export') }}"
@@ -124,7 +133,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
                         <p class="text-sm">Belum ada data untuk periode ini.</p>
-                        <p class="text-xs mt-1">Silakan lakukan sinkronisasi API terlebih dahulu.</p>
+                        <p class="text-xs mt-1">Silakan lakukan sinkronisasi API atau upload CSV terlebih dahulu.</p>
                     </div>
                 @endif
             </div>
@@ -182,7 +191,7 @@
                                         <svg class="w-10 h-10 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                         </svg>
-                                        Belum ada data transaksi. Silakan lakukan sinkronisasi API.
+                                        Belum ada data transaksi. Silakan lakukan sinkronisasi API atau upload CSV.
                                     </td>
                                 </tr>
                             @endforelse
@@ -191,7 +200,7 @@
                 </div>
             </div>
 
-            {{-- ── 🆕 SEKSI AUDIT LOG ── --}}
+            {{-- ── Audit Log ── --}}
             <div class="bg-white rounded-xl shadow overflow-hidden">
                 <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100">
                     <h3 class="text-lg font-bold text-gray-800">Log Aktivitas Sistem (Audit Log)</h3>
@@ -224,8 +233,8 @@
                                             <div class="flex-1 min-w-0 pt-1.5 flex justify-between space-x-4">
                                                 <div>
                                                     <p class="text-sm text-gray-600">
-                                                        <span class="font-bold text-gray-900">{{ $log->user->name ?? 'System/API' }}</span> 
-                                                        melakukan aksi <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-800">{{ $log->activity }}</span> 
+                                                        <span class="font-bold text-gray-900">{{ $log->user->name ?? 'System/API' }}</span>
+                                                        melakukan aksi <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-800">{{ $log->activity }}</span>
                                                         pada komponen <span class="font-medium text-indigo-600">{{ $log->model_type }}</span>.
                                                     </p>
                                                     <p class="text-xs text-gray-500 mt-1 bg-gray-50 p-2 rounded-lg border border-gray-100 font-mono">
@@ -249,7 +258,6 @@
                     </div>
                 </div>
             </div>
-            {{-- ── END SEKSI AUDIT LOG ── --}}
 
         </div>
     </div>
@@ -262,7 +270,6 @@
                 <button onclick="document.getElementById('modalSync').classList.add('hidden')"
                     class="text-white hover:text-orange-200 text-2xl leading-none">&times;</button>
             </div>
-
             <form action="{{ route('api.sync') }}" method="GET" class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
@@ -287,6 +294,49 @@
                     </button>
                     <button type="button"
                         onclick="document.getElementById('modalSync').classList.add('hidden')"
+                        class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ══ Modal Upload CSV ══ --}}
+    <div id="modalUploadCsv" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
+                <h4 class="text-white font-bold text-lg">Upload File CSV</h4>
+                <button onclick="document.getElementById('modalUploadCsv').classList.add('hidden')"
+                    class="text-white hover:text-blue-200 text-2xl leading-none">&times;</button>
+            </div>
+            <form action="{{ route('transactions.upload-csv') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih File CSV</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition cursor-pointer"
+                        onclick="document.getElementById('csvFileInput').click()">
+                        <svg class="w-10 h-10 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        <p class="text-sm text-gray-500" id="csvFileName">Klik untuk pilih file CSV</p>
+                        <p class="text-xs text-gray-400 mt-1">Format: CSV dengan separator titik koma (;)</p>
+                    </div>
+                    <input type="file" id="csvFileInput" name="csv_file" accept=".csv,.txt" class="hidden"
+                        onchange="document.getElementById('csvFileName').textContent = this.files[0]?.name || 'Klik untuk pilih file CSV'">
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-700">
+                    <strong>⚠️ Perhatian:</strong> Data yang sudah ada (berdasarkan ID) akan dilewati otomatis, tidak akan duplikat.
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="submit"
+                        class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition">
+                        Upload & Import
+                    </button>
+                    <button type="button"
+                        onclick="document.getElementById('modalUploadCsv').classList.add('hidden')"
                         class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition">
                         Batal
                     </button>

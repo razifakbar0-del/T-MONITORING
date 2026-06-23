@@ -38,8 +38,7 @@ class DashboardController extends Controller
         // ── Data grafik ──────────────────────────────────
         if ($filter === 'harian') {
             $chartData = Transaction::selectRaw(
-                    "strftime('%H:00', trx_date) as period, SUM(amount) as total, COUNT(*) as jumlah"
-                )
+                "DATE_FORMAT(trx_date, '%H:00') as period"                )
                 ->whereBetween('trx_date', [$startDate, $endDate])
                 ->groupBy('period')
                 ->orderBy('period', 'asc')

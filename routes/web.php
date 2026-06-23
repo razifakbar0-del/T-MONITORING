@@ -14,6 +14,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/sync-api', [TransactionController::class, 'syncApi'])->name('api.sync');
     Route::get('/export-transactions', [TransactionController::class, 'exportCsv'])->name('transactions.export');
+    
+    // Taruh di sini supaya aman di dalam middleware auth!
+    Route::post('/transactions/upload-csv', [TransactionController::class, 'uploadCsv'])->name('transactions.upload-csv');
+
     Route::get('/users',            [UserController::class, 'index'])  ->name('users.index');
     Route::post('/users',           [UserController::class, 'store'])  ->name('users.store');
     Route::delete('/users/{user}',  [UserController::class, 'destroy'])->name('users.destroy');
@@ -22,9 +26,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// ← DEBUG DI SINI (di luar group)
+// ← DEBUG API (Sudah dibersihkan dari sisa kode yang nyangkut)
 Route::get('/debug-api', function () {
-    $url = "https://mpn-gateway.samantara.com/mpnbjt/api/mutasi?start=2026-06-01&end=2026-06-12";
+    $url = "https://mpn-gateway.samantara.com/mpnbjt/api/mutasi?start=2026-01-01&end=2026-06-12"; // Menggunakan range dari Januari sesuai catatan kamu
     try {
         $response = \Illuminate\Support\Facades\Http::timeout(30)
             ->withHeaders(['Accept' => 'application/json'])
@@ -50,8 +54,6 @@ Route::get('/debug-api', function () {
     } catch (\Exception $e) {
         return response()->json(['error' => $e->getMessage()]);
     }
-    // Coba dari Januari sampai sekarang
-$url = "https://mpn-gateway.samantara.com/mpnbjt/api/mutasi?start=2026-01-01&end=2026-06-12";
 });
 
 require __DIR__.'/auth.php';

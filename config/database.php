@@ -44,6 +44,20 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
+        'mutasi' => [
+    'driver' => 'mysql',
+    'host' => env('DB_MUTASI_HOST', '127.0.0.1'),
+    'port' => env('DB_MUTASI_PORT', '3306'),
+    'database' => env('DB_MUTASI_DATABASE', 'mutasi_db'),
+    'username' => env('DB_MUTASI_USERNAME', 'root'),
+    'password' => env('DB_MUTASI_PASSWORD', ''),
+    'charset' => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci',
+    'prefix' => '',
+    'strict' => true,
+    'engine' => null,
+],
+
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DB_URL'),
