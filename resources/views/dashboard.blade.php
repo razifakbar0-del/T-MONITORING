@@ -75,17 +75,8 @@
                         </div>
                     </div>
 
-                    {{-- Sinkronisasi + Upload + Export --}}
+                    {{-- Upload + Export --}}
                     <div class="flex flex-wrap gap-2">
-
-                        {{-- Modal trigger sinkronisasi --}}
-                        <button type="button" onclick="document.getElementById('modalSync').classList.remove('hidden')"
-                            class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold rounded-lg shadow transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18.2"/>
-                            </svg>
-                            SINKRONISASI API
-                        </button>
 
                         {{-- Tombol Upload CSV --}}
                         <button type="button" onclick="document.getElementById('modalUploadCsv').classList.remove('hidden')"
@@ -133,7 +124,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
                         <p class="text-sm">Belum ada data untuk periode ini.</p>
-                        <p class="text-xs mt-1">Silakan lakukan sinkronisasi API atau upload CSV terlebih dahulu.</p>
+                        <p class="text-xs mt-1">Silakan lakukan upload CSV terlebih dahulu.</p>
                     </div>
                 @endif
             </div>
@@ -191,7 +182,7 @@
                                         <svg class="w-10 h-10 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
                                         </svg>
-                                        Belum ada data transaksi. Silakan lakukan sinkronisasi API atau upload CSV.
+                                        Belum ada data transaksi. Silakan lakukan upload CSV.
                                     </td>
                                 </tr>
                             @endforelse
@@ -259,46 +250,6 @@
                 </div>
             </div>
 
-        </div>
-    </div>
-
-    {{-- ══ Modal Sinkronisasi ══ --}}
-    <div id="modalSync" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
-            <div class="bg-orange-500 px-6 py-4 flex justify-between items-center">
-                <h4 class="text-white font-bold text-lg">Sinkronisasi API Samantara</h4>
-                <button onclick="document.getElementById('modalSync').classList.add('hidden')"
-                    class="text-white hover:text-orange-200 text-2xl leading-none">&times;</button>
-            </div>
-            <form action="{{ route('api.sync') }}" method="GET" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Mulai</label>
-                    <input type="date" name="start"
-                        value="{{ now()->startOfMonth()->format('Y-m-d') }}"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-orange-400 focus:border-orange-400">
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Tanggal Selesai</label>
-                    <input type="date" name="end"
-                        value="{{ now()->format('Y-m-d') }}"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-orange-400 focus:border-orange-400">
-                </div>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-                    <strong>Endpoint:</strong><br>
-                    <code class="break-all">https://mpn-gateway.samantara.com/mpnbjt/api/mutasi?start=...&end=...</code>
-                </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="submit"
-                        class="flex-1 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold rounded-lg transition">
-                        Mulai Sinkronisasi
-                    </button>
-                    <button type="button"
-                        onclick="document.getElementById('modalSync').classList.add('hidden')"
-                        class="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-lg transition">
-                        Batal
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
